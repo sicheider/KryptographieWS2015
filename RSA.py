@@ -40,6 +40,32 @@ def egcd(ld,d): # erweiterter Euklidischer Algorithmus
     (y,ly) = (ly-q*y,y)       
   return (ld,lx,ly)
 
+def phi(p, q):
+    return (p - 1) * (q - 1)
+
+def getPQ(l):
+  searchPQ = True
+  while searchPQ:
+      p = random.randint(2 ** l, 2 ** (l + 1))
+      q = random.randint(2 ** l, 2 ** (l + 1))
+      if IsPrime(p) and IsPrime(q) and (p != q):
+          searchPQ = False
+  return (p, q)
+
+def getE(p, q):
+    searchE = True
+    while searchE:
+        e = random.randint(2, phi(p, q) - 1)
+        (d, x, y) = egcd(e, phi(p, q))
+        if d == 1:
+            searchE = False
+    return e
+
+def getD(p, q, e):
+    (z, x, y) = egcd(phi(p, q), e)
+    d = y % phi(p, q)
+    return d
+
 def ModInv(e,n): # Inverses mod n
   # Aufruf: ModInv(e,n) mit natuerlichen Zahlen e,n>0 und ggT(e,n)=1
   # Ausgabe: d aus {1,...,n-1} mit (d*e)%n = 1
@@ -49,7 +75,20 @@ def ModInv(e,n): # Inverses mod n
 def ModExp(x,y,n): # Exponentialfunktion mod n
   # Aufruf: ModExp(x,y,n) mit natuerlichen Zahlen x,y,n und n>=2
   # Ausgabe: z = (x**y)%n
-  ...
+  z = 0
+  for i in range(2, len(bin(y))):
+      if i == 2:
+          z = (x ** 2)
+      elif i == len(bin(y)) - 1:
+          if list(bin(y))[i] == '0':
+              z = z % n
+          else:
+              z = (z * x) % n
+      else:
+          if list(bin(y))[i] == '0':
+              z = (z % n) ** 2
+          else:
+              z = ((z * x) % n) ** 2
   return z
 
 def RSAKeyGen(r=1024):
@@ -61,22 +100,27 @@ def RSAKeyGen(r=1024):
   #     d = Inverses von e modulo phi(n),
   #         d.h. 1<d<phi(n) mit der Eigenschaft (e*d) % phi(n) = 1
   #
-  ...
   # Hinweis: Der Befehl random.randint(a,b) liefert eine
   #          gleichverteilt zufaellige Zahl aus {a,a+1,...,b}.
-  ...
+  l = (r + 2) // 2
+  (p, q) = getPQ(l)
+  e = getE(p, q)
+  d = getD(p, q, e)
+  n = p * q
   return ((n,e),(n,d))
 
 def RSAEncrypt(pk,m):
   # Aufruf: RSAEncrypt(pk,m) mit public key pk und Klartext m
   # Ausgabe: Chiffretext c
-  ...
+  (n, e) = pk
+  c = ModExp(m, e, n)
   return c
 
 def RSADecrypt(sk,c):
   # Aufruf: RSADecrypt(sk,c) mit secure key sk und Chiffretext c
   # Ausgabe: dechiffrierte Nachricht m
-  ...
+  (n, d) = sk
+  m = ModExp(c, d, n)
   return m
 
 def str2int(s): # codiert einen String als Zahl (zum Testen von RSA)
